@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model destinations {
+  id                       Int                        @id(map: "destionations_pkey") @default(autoincrement())
+  name                     String
+  userID                   String
+  startDate                DateTime                   @db.Timestamptz(6)
+  endDate                  DateTime                   @db.Timestamptz(6)
+  description              String
+  createdAt                DateTime?                  @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  freeSpots                Int
+  latitude                 Decimal                    @db.Decimal
+  longitude                Decimal                    @db.Decimal
+  image                    String
+  comments                 comments[]
+  destination_reservations destination_reservations[]
+  traveling_users          traveling_users            @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
+  dislikes                 dislikes[]
+  likes                    likes[]
+  notifications            notifications[]
+}
+
+model traveling_users {
+  id                                                     Int                        @id @default(autoincrement())
+  firstName                                              String
+  lastName                                               String
+  username                                               String                     @unique
+  password                                               String
+  email                                                  String
+  phone                                                  String
+  gender                                                 users_gender?              @default(M)
+  profilePicture                                         String
+  admin                                                  Boolean?                   @default(false)
+  comments                                               comments[]
+  destination_reservations                               destination_reservations[]
+  destinations                                           destinations[]
+  dislikes                                               dislikes[]
+  likes                                                  likes[]
+  notifications_notifications_recipientTotraveling_users notifications[]            @relation("notifications_recipientTotraveling_users")
+  notifications_notifications_senderTotraveling_users    notifications[]            @relation("notifications_senderTotraveling_users")
+  rent_reservations                                      rent_reservations[]
+  rent_reviews                                           rent_reviews[]
+  rents                                                  rents[]
+
+  @@map("traveling-users")
+}
+
+model comments {
+  id              Int             @id @default(autoincrement())
+  createdAt       DateTime?       @default(now()) @db.Timestamptz(6)
+  userID          String
+  postID          Int
+  message         String
+  destinations    destinations    @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  traveling_users traveling_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model destination_reservations {
+  id              Int             @id @default(autoincrement())
+  userID          String
+  postID          Int
+  people          Int
+  destinations    destinations    @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  traveling_users traveling_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("destination-reservations")
+}
+
+model dislikes {
+  id              Int              @id @default(autoincrement())
+  userID          String?
+  postID          Int?
+  destinations    destinations?    @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  traveling_users traveling_users? @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model likes {
+  id              Int              @id @default(autoincrement())
+  userID          String?
+  postID          Int?
+  destinations    destinations?    @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  traveling_users traveling_users? @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model rent_reservations {
+  id              Int             @id @default(autoincrement())
+  userID          String
+  people          Int
+  startDate       DateTime        @db.Date
+  endDate         DateTime        @db.Date
+  postID          Int
+  rents           rents           @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  traveling_users traveling_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("rent-reservations")
+}
+
+model rent_reviews {
+  id              Int             @id @default(autoincrement())
+  createdAt       DateTime?       @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  userID          String
+  postID          Int
+  rating          Decimal         @db.Decimal
+  message         String
+  rents           rents           @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  traveling_users traveling_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("rent-reviews")
+}
+
+model rents {
+  id                Int                 @id @default(autoincrement())
+  userID            String
+  createdAt         DateTime?           @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  name              String
+  image             String
+  people            Int
+  description       String
+  latitude          Decimal             @db.Decimal
+  longitude         Decimal             @db.Decimal
+  price             Int?
+  notifications     notifications[]
+  rent_reservations rent_reservations[]
+  rent_reviews      rent_reviews[]
+  traveling_users   traveling_users     @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model notifications {
+  id                                                       Int             @id @default(autoincrement())
+  sender                                                   String
+  recipient                                                String
+  destinationID                                            Int?
+  rentID                                                   Int?
+  message                                                  String
+  new                                                      Boolean?        @default(false)
+  destinations                                             destinations?   @relation(fields: [destinationID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  traveling_users_notifications_recipientTotraveling_users traveling_users @relation("notifications_recipientTotraveling_users", fields: [recipient], references: [username], onDelete: Cascade, onUpdate: NoAction)
+  rents                                                    rents?          @relation(fields: [rentID], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  traveling_users_notifications_senderTotraveling_users    traveling_users @relation("notifications_senderTotraveling_users", fields: [sender], references: [username], onDelete: NoAction, onUpdate: NoAction)
+}
+
+enum users_gender {
+  M
+  F
+}
