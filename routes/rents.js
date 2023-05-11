@@ -245,4 +245,49 @@ router.delete("/rent-reservations/:id", checkAuthMiddleWare, async (req, res) =>
     });
 });
 
+router
+  .route("/rent-pictures")
+  .get(async (req, res) => {
+    const pictures = await prisma.rent_pictures.findMany();
+    res.json(pictures);
+  })
+  .post(checkAuthMiddleWare, async (req, res) => {
+    const data = req.body;
+    if (data.userID === req.token.username) {
+      const newPicture = await prisma.rent_pictures.create({
+        data,
+      });
+      res.status(201).json({ message: "Picture added successfully!", newPicture });
+    } else
+      res
+        .status(401)
+        .json({
+          message: "Not authorized.",
+          errors: { hacking: "You are not allowed to create pictures for other users!" },
+        });
+  });
+
+router.delete("/rent-pictures/:id", checkAuthMiddleWare, async (req, res) => {
+  const id = +req.params.id;
+  const curPicture = await prisma.rent_pictures.findUnique({
+    where: {
+      id,
+    },
+  });
+  if (curPicture.userID === req.token.username) {
+    const deletedPicture = await prisma.rent_pictures.findUnique({
+      where: {
+        id,
+      },
+    });
+    res.status(201).json({ message: "Pictures deleted successfully!", deletedPicture });
+  } else
+    res
+      .status(401)
+      .json({
+        message: "Not authorized.",
+        errors: { hacking: "You are not allowed to delete pictures for other users!" },
+      });
+});
+
 module.exports = router;

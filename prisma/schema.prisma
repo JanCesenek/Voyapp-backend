@@ -19,7 +19,9 @@ model destinations {
   latitude                 Decimal                    @db.Decimal
   longitude                Decimal                    @db.Decimal
   image                    String
+  picID                    String?                    @unique
   comments                 comments[]
+  destination_pictures     destination_pictures[]
   destination_reservations destination_reservations[]
   traveling_users          traveling_users            @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
   dislikes                 dislikes[]
@@ -39,12 +41,14 @@ model traveling_users {
   profilePicture                                         String
   admin                                                  Boolean?                   @default(false)
   comments                                               comments[]
+  destination_pictures                                   destination_pictures[]
   destination_reservations                               destination_reservations[]
   destinations                                           destinations[]
   dislikes                                               dislikes[]
   likes                                                  likes[]
   notifications_notifications_recipientTotraveling_users notifications[]            @relation("notifications_recipientTotraveling_users")
   notifications_notifications_senderTotraveling_users    notifications[]            @relation("notifications_senderTotraveling_users")
+  rent_pictures                                          rent_pictures[]
   rent_reservations                                      rent_reservations[]
   rent_reviews                                           rent_reviews[]
   rents                                                  rents[]
@@ -126,7 +130,9 @@ model rents {
   latitude          Decimal             @db.Decimal
   longitude         Decimal             @db.Decimal
   price             Int?
+  picID             String?             @unique
   notifications     notifications[]
+  rent_pictures     rent_pictures[]
   rent_reservations rent_reservations[]
   rent_reviews      rent_reviews[]
   traveling_users   traveling_users     @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
@@ -144,6 +150,28 @@ model notifications {
   traveling_users_notifications_recipientTotraveling_users traveling_users @relation("notifications_recipientTotraveling_users", fields: [recipient], references: [username], onDelete: Cascade, onUpdate: NoAction)
   rents                                                    rents?          @relation(fields: [rentID], references: [id], onDelete: Cascade, onUpdate: NoAction)
   traveling_users_notifications_senderTotraveling_users    traveling_users @relation("notifications_senderTotraveling_users", fields: [sender], references: [username], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model destination_pictures {
+  id              Int             @id @default(autoincrement())
+  name            String
+  userID          String
+  postID          String
+  destinations    destinations    @relation(fields: [postID], references: [picID], onDelete: Cascade, onUpdate: NoAction)
+  traveling_users traveling_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("destination-pictures")
+}
+
+model rent_pictures {
+  id              Int             @id @default(autoincrement())
+  name            String
+  userID          String
+  postID          String
+  rents           rents           @relation(fields: [postID], references: [picID], onDelete: Cascade, onUpdate: NoAction)
+  traveling_users traveling_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("rent-pictures")
 }
 
 enum users_gender {
