@@ -30,7 +30,7 @@ router
       });
   })
   .delete(checkAuthMiddleWare, async (req, res) => {
-    if (req.params.username === req.token.username) {
+    if (req.params.username === req.token.username || req.token.admin) {
       const deletedUser = await prisma.traveling_users.delete({
         where: {
           username: req.params.username,
