@@ -1,9 +1,8 @@
 const express = require("express");
-const { PrismaClient } = require("@prisma/client");
 const { checkAuthMiddleWare } = require("../util/auth");
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require("./prisma");
 
 router
   .route("/destinations")
@@ -351,12 +350,10 @@ router
       });
       res.status(201).json({ message: "Picture added successfully!", newPicture });
     } else
-      res
-        .status(401)
-        .json({
-          message: "Not authorized.",
-          errors: { hacking: "You are not allowed to create pictures for other users!" },
-        });
+      res.status(401).json({
+        message: "Not authorized.",
+        errors: { hacking: "You are not allowed to create pictures for other users!" },
+      });
   });
 
 router.delete("/destination-pictures/:id", checkAuthMiddleWare, async (req, res) => {
@@ -374,12 +371,10 @@ router.delete("/destination-pictures/:id", checkAuthMiddleWare, async (req, res)
     });
     res.status(201).json({ message: "Picture deleted successfully!", deletedPicture });
   } else
-    res
-      .status(401)
-      .json({
-        message: "Not authorized.",
-        errors: { hacking: "You are not allowed to delete pictures for other users!" },
-      });
+    res.status(401).json({
+      message: "Not authorized.",
+      errors: { hacking: "You are not allowed to delete pictures for other users!" },
+    });
 });
 
 module.exports = router;

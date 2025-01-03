@@ -2,11 +2,10 @@ const express = require("express");
 const { get } = require("../data/user");
 const { createJSONToken, isValidPassword } = require("../util/auth");
 const { isValidPassword: pwCheck, isValidText, isValidUsername } = require("../util/validation");
-const { PrismaClient } = require("@prisma/client");
 const { hash } = require("bcryptjs");
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require("./prisma");
 
 router.post("/signup", async (req, res, next) => {
   const data = req.body;
