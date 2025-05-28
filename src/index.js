@@ -5,6 +5,7 @@ const authRoutes = require("../routes/auth");
 const usersRoutes = require("../routes/users");
 const destinationsRoutes = require("../routes/destinations");
 const rentsRoutes = require("../routes/rents");
+const { hash } = require("bcryptjs");
 
 const app = express();
 const port = +process.env.PORT || 8080;
@@ -17,6 +18,10 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
+
+app.get("/", async (_, res) => {
+  res.json(await hash("Marybrown2*105", 16)).toString();
+});
 
 app.use(authRoutes);
 app.use(usersRoutes);

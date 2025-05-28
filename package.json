@@ -11,7 +11,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.802.0",
     "@prisma/client": "^4.10.1",
+    "@supabase/supabase-js": "^2.49.4",
     "@types/body-parser": "^1.19.2",
     "@types/cors": "^2.8.13",
     "bcryptjs": "^2.4.3",
