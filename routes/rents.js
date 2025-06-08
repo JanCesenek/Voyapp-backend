@@ -7,13 +7,13 @@ const prisma = require("./prisma");
 router
   .route("/rents")
   .get(async (req, res) => {
-    const rents = await prisma.rents.findMany();
+    const rents = await prisma.travel_rents.findMany();
     res.json(rents);
   })
   .post(checkAuthMiddleWare, async (req, res) => {
     const data = req.body;
     if (data.userID === req.token.username) {
-      const newPost = await prisma.rents.create({
+      const newPost = await prisma.travel_rents.create({
         data,
       });
       res.status(201).json({ message: "Post created successfully!", newPost });
@@ -29,13 +29,13 @@ router
   .patch(checkAuthMiddleWare, async (req, res) => {
     const id = +req.params.id;
     const data = req.body;
-    const curPost = await prisma.rents.findUnique({
+    const curPost = await prisma.travel_rents.findUnique({
       where: {
         id,
       },
     });
     if (curPost.userID === req.token.username) {
-      const updatedPost = await prisma.rents.update({
+      const updatedPost = await prisma.travel_rents.update({
         where: {
           id,
         },
@@ -50,13 +50,13 @@ router
   })
   .delete(checkAuthMiddleWare, async (req, res) => {
     const id = +req.params.id;
-    const curPost = await prisma.rents.findUnique({
+    const curPost = await prisma.travel_rents.findUnique({
       where: {
         id,
       },
     });
     if (curPost.userID === req.token.username || req.token.admin) {
-      const deletePost = await prisma.rents.delete({
+      const deletePost = await prisma.travel_rents.delete({
         where: {
           id,
         },
@@ -72,19 +72,19 @@ router
 router
   .route("/reviews")
   .get(async (req, res) => {
-    const reviews = await prisma.rent_reviews.findMany();
+    const reviews = await prisma.travel_rent_reviews.findMany();
     res.json(reviews);
   })
   .post(checkAuthMiddleWare, async (req, res) => {
     const data = req.body;
-    const alreadyReviewed = await prisma.rent_reviews.findFirst({
+    const alreadyReviewed = await prisma.travel_rent_reviews.findFirst({
       where: {
         userID: data.userID,
         postID: data.postID,
       },
     });
     if (data.userID === req.token.username && !alreadyReviewed) {
-      const newReview = await prisma.rent_reviews.create({
+      const newReview = await prisma.travel_rent_reviews.create({
         data,
       });
       res.status(201).json({ message: "Review created successfully!", newReview });
@@ -97,13 +97,13 @@ router
 
 router.delete("/reviews/:id", checkAuthMiddleWare, async (req, res) => {
   const id = +req.params.id;
-  const curReview = await prisma.rent_reviews.findUnique({
+  const curReview = await prisma.travel_rent_reviews.findUnique({
     where: {
       id,
     },
   });
   if (curReview.userID === req.token.username) {
-    const deletedReview = await prisma.rent_reviews.delete({
+    const deletedReview = await prisma.travel_rent_reviews.delete({
       where: {
         id,
       },
@@ -119,22 +119,22 @@ router.delete("/reviews/:id", checkAuthMiddleWare, async (req, res) => {
 router
   .route("/rent-reservations")
   .get(async (req, res) => {
-    const reservations = await prisma.rent_reservations.findMany();
+    const reservations = await prisma.travel_rent_reservations.findMany();
     res.json(reservations);
   })
   .post(checkAuthMiddleWare, async (req, res) => {
     const data = req.body;
-    const curPost = await prisma.rents.findUnique({
+    const curPost = await prisma.travel_rents.findUnique({
       where: {
         id: data.postID,
       },
     });
-    const postOwner = await prisma.traveling_users.findUnique({
+    const postOwner = await prisma.travel_users.findUnique({
       where: {
         username: curPost.userID,
       },
     });
-    const sender = await prisma.traveling_users.findUnique({
+    const sender = await prisma.travel_users.findUnique({
       where: {
         username: data.userID,
       },
@@ -152,10 +152,10 @@ router
         String(data.endDate).slice(5, 7) +
         " / " +
         String(data.endDate).slice(0, 4);
-      const newReservation = await prisma.rent_reservations.create({
+      const newReservation = await prisma.travel_rent_reservations.create({
         data,
       });
-      const newNotification = await prisma.notifications.create({
+      const newNotification = await prisma.travel_notifications.create({
         data: {
           sender: data.userID,
           recipient: postOwner.username,
@@ -178,22 +178,22 @@ router
 
 router.delete("/rent-reservations/:id", checkAuthMiddleWare, async (req, res) => {
   const id = +req.params.id;
-  const curReservation = await prisma.rent_reservations.findUnique({
+  const curReservation = await prisma.travel_rent_reservations.findUnique({
     where: {
       id,
     },
   });
-  const curPost = await prisma.rents.findUnique({
+  const curPost = await prisma.travel_rents.findUnique({
     where: {
       id: curReservation.postID,
     },
   });
-  const sender = await prisma.traveling_users.findUnique({
+  const sender = await prisma.travel_users.findUnique({
     where: {
       username: curReservation.userID,
     },
   });
-  const postOwner = await prisma.traveling_users.findUnique({
+  const postOwner = await prisma.travel_users.findUnique({
     where: {
       username: curPost.userID,
     },
@@ -211,13 +211,13 @@ router.delete("/rent-reservations/:id", checkAuthMiddleWare, async (req, res) =>
       String(curReservation.endDate).slice(4, 7) +
       " " +
       String(curReservation.endDate).slice(11, 15);
-    const deletedReservation = await prisma.rent_reservations.delete({
+    const deletedReservation = await prisma.travel_rent_reservations.delete({
       where: {
         id,
       },
     });
     const hisOrHer = sender.gender === "M" ? "his" : "her";
-    const deletedNotification = await prisma.notifications.create({
+    const deletedNotification = await prisma.travel_notifications.create({
       data: {
         sender: req.token.username,
         recipient:
@@ -247,13 +247,13 @@ router.delete("/rent-reservations/:id", checkAuthMiddleWare, async (req, res) =>
 router
   .route("/rent-pictures")
   .get(async (req, res) => {
-    const pictures = await prisma.rent_pictures.findMany();
+    const pictures = await prisma.travel_rent_pictures.findMany();
     res.json(pictures);
   })
   .post(checkAuthMiddleWare, async (req, res) => {
     const data = req.body;
     if (data.userID === req.token.username) {
-      const newPicture = await prisma.rent_pictures.create({
+      const newPicture = await prisma.travel_rent_pictures.create({
         data,
       });
       res.status(201).json({ message: "Picture added successfully!", newPicture });
@@ -266,13 +266,13 @@ router
 
 router.delete("/rent-pictures/:id", checkAuthMiddleWare, async (req, res) => {
   const id = +req.params.id;
-  const curPicture = await prisma.rent_pictures.findUnique({
+  const curPicture = await prisma.travel_rent_pictures.findUnique({
     where: {
       id,
     },
   });
   if (curPicture.userID === req.token.username) {
-    const deletedPicture = await prisma.rent_pictures.findUnique({
+    const deletedPicture = await prisma.travel_rent_pictures.findUnique({
       where: {
         id,
       },

@@ -5,7 +5,7 @@ const router = express.Router();
 const prisma = require("./prisma");
 
 router.get("/users", async (req, res) => {
-  const users = await prisma.traveling_users.findMany();
+  const users = await prisma.travel_users.findMany();
   res.json(users);
 });
 
@@ -13,7 +13,7 @@ router
   .route("/users/:username")
   .patch(checkAuthMiddleWare, async (req, res) => {
     if (req.params.username === req.token.username) {
-      const updatedUser = await prisma.traveling_users.update({
+      const updatedUser = await prisma.travel_users.update({
         where: {
           username: req.params.username,
         },
@@ -30,7 +30,7 @@ router
   })
   .delete(checkAuthMiddleWare, async (req, res) => {
     if (req.params.username === req.token.username || req.token.admin) {
-      const deletedUser = await prisma.traveling_users.delete({
+      const deletedUser = await prisma.travel_users.delete({
         where: {
           username: req.params.username,
         },
@@ -46,19 +46,19 @@ router
   });
 
 router.get("/notifications", async (req, res) => {
-  const notifications = await prisma.notifications.findMany();
+  const notifications = await prisma.travel_notifications.findMany();
   res.json(notifications);
 });
 
 router.delete("/notifications/:id", checkAuthMiddleWare, async (req, res) => {
   const id = +req.params.id;
-  const curNotification = await prisma.notifications.findUnique({
+  const curNotification = await prisma.travel_notifications.findUnique({
     where: {
       id,
     },
   });
   if (curNotification.recipient === req.token.username) {
-    const deletedNotification = await prisma.notifications.delete({
+    const deletedNotification = await prisma.travel_notifications.delete({
       where: {
         id,
       },

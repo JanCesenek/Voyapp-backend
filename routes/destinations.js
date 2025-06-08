@@ -7,13 +7,13 @@ const prisma = require("./prisma");
 router
   .route("/destinations")
   .get(async (req, res) => {
-    const destinations = await prisma.destinations.findMany();
+    const destinations = await prisma.travel_destinations.findMany();
     res.json(destinations);
   })
   .post(checkAuthMiddleWare, async (req, res) => {
     const data = req.body;
     if (data.userID === req.token.username) {
-      const newPost = await prisma.destinations.create({
+      const newPost = await prisma.travel_destinations.create({
         data,
       });
       res.status(201).json({ message: "Post created successfully!", newPost });
@@ -31,13 +31,13 @@ router
   .patch(checkAuthMiddleWare, async (req, res) => {
     const id = +req.params.id;
     const data = req.body;
-    const curPost = await prisma.destinations.findUnique({
+    const curPost = await prisma.travel_destinations.findUnique({
       where: {
         id,
       },
     });
     if (curPost.userID === req.token.username) {
-      const updatedPost = await prisma.destinations.update({
+      const updatedPost = await prisma.travel_destinations.update({
         where: {
           id,
         },
@@ -54,13 +54,13 @@ router
   })
   .delete(checkAuthMiddleWare, async (req, res) => {
     const id = +req.params.id;
-    const curPost = await prisma.destinations.findUnique({
+    const curPost = await prisma.travel_destinations.findUnique({
       where: {
         id,
       },
     });
     if (curPost.userID === req.token.username || req.token.admin) {
-      const deletePost = await prisma.destinations.delete({
+      const deletePost = await prisma.travel_destinations.delete({
         where: {
           id,
         },
@@ -78,31 +78,31 @@ router
 router
   .route("/destination-reservations")
   .get(async (req, res) => {
-    const reservations = await prisma.destination_reservations.findMany();
+    const reservations = await prisma.travel_destination_reservations.findMany();
     res.json(reservations);
   })
   .post(checkAuthMiddleWare, async (req, res) => {
     const data = req.body;
-    const curPost = await prisma.destinations.findUnique({
+    const curPost = await prisma.travel_destinations.findUnique({
       where: {
         id: data.postID,
       },
     });
-    const postOwner = await prisma.traveling_users.findUnique({
+    const postOwner = await prisma.travel_users.findUnique({
       where: {
         username: curPost.userID,
       },
     });
-    const sender = await prisma.traveling_users.findUnique({
+    const sender = await prisma.travel_users.findUnique({
       where: {
         username: data.userID,
       },
     });
     if (data.userID === req.token.username) {
-      const newReservation = await prisma.destination_reservations.create({
+      const newReservation = await prisma.travel_destination_reservations.create({
         data,
       });
-      const newNotification = await prisma.notifications.create({
+      const newNotification = await prisma.travel_notifications.create({
         data: {
           sender: data.userID,
           recipient: postOwner.username,
@@ -127,34 +127,34 @@ router
 
 router.delete("/destination-reservations/:id", checkAuthMiddleWare, async (req, res) => {
   const id = +req.params.id;
-  const curReservation = await prisma.destination_reservations.findUnique({
+  const curReservation = await prisma.travel_destination_reservations.findUnique({
     where: {
       id,
     },
   });
-  const curPost = await prisma.destinations.findUnique({
+  const curPost = await prisma.travel_destinations.findUnique({
     where: {
       id: curReservation.postID,
     },
   });
-  const sender = await prisma.traveling_users.findUnique({
+  const sender = await prisma.travel_users.findUnique({
     where: {
       username: curReservation.userID,
     },
   });
-  const postOwner = await prisma.traveling_users.findUnique({
+  const postOwner = await prisma.travel_users.findUnique({
     where: {
       username: curPost.userID,
     },
   });
   if (curReservation.userID === req.token.username || postOwner.username === req.token.username) {
-    const deletedReservation = await prisma.destination_reservations.delete({
+    const deletedReservation = await prisma.travel_destination_reservations.delete({
       where: {
         id,
       },
     });
     const hisOrHer = sender.gender === "M" ? "his" : "her";
-    const deletedNotification = await prisma.notifications.create({
+    const deletedNotification = await prisma.travel_notifications.create({
       data: {
         sender: req.token.username,
         recipient:
@@ -186,24 +186,24 @@ router.delete("/destination-reservations/:id", checkAuthMiddleWare, async (req, 
 router
   .route("/likes")
   .get(async (req, res) => {
-    const likes = await prisma.likes.findMany();
+    const likes = await prisma.travel_likes.findMany();
     res.json(likes);
   })
   .post(checkAuthMiddleWare, async (req, res) => {
     const data = req.body;
-    const curPost = await prisma.destinations.findUnique({
+    const curPost = await prisma.travel_destinations.findUnique({
       where: {
         id: data.postID,
       },
     });
-    const alreadyLiked = await prisma.likes.findFirst({
+    const alreadyLiked = await prisma.travel_likes.findFirst({
       where: {
         postID: curPost.id,
         userID: req.token.username,
       },
     });
     if (data.userID === req.token.username && !alreadyLiked) {
-      const newLike = await prisma.likes.create({
+      const newLike = await prisma.travel_likes.create({
         data,
       });
       res.status(201).json({ messsage: "Post liked successfully!", newLike });
@@ -218,13 +218,13 @@ router
 
 router.delete("/likes/:id", checkAuthMiddleWare, async (req, res) => {
   const id = +req.params.id;
-  const curLike = await prisma.likes.findUnique({
+  const curLike = await prisma.travel_likes.findUnique({
     where: {
       id,
     },
   });
   if (curLike.userID === req.token.username) {
-    const deletedLike = await prisma.likes.delete({
+    const deletedLike = await prisma.travel_likes.delete({
       where: {
         id,
       },
@@ -242,24 +242,24 @@ router.delete("/likes/:id", checkAuthMiddleWare, async (req, res) => {
 router
   .route("/dislikes")
   .get(async (req, res) => {
-    const dislikes = await prisma.dislikes.findMany();
+    const dislikes = await prisma.travel_dislikes.findMany();
     res.json(dislikes);
   })
   .post(checkAuthMiddleWare, async (req, res) => {
     const data = req.body;
-    const curPost = await prisma.destinations.findUnique({
+    const curPost = await prisma.travel_destinations.findUnique({
       where: {
         id: data.postID,
       },
     });
-    const alreadyDisliked = await prisma.dislikes.findFirst({
+    const alreadyDisliked = await prisma.travel_dislikes.findFirst({
       where: {
         postID: curPost.id,
         userID: req.token.username,
       },
     });
     if (data.userID === req.token.username && !alreadyDisliked) {
-      const newDislike = await prisma.dislikes.create({
+      const newDislike = await prisma.travel_dislikes.create({
         data,
       });
       res.status(201).json({ messsage: "Post disliked successfully!", newDislike });
@@ -274,13 +274,13 @@ router
 
 router.delete("/dislikes/:id", checkAuthMiddleWare, async (req, res) => {
   const id = +req.params.id;
-  const curDislike = await prisma.dislikes.findUnique({
+  const curDislike = await prisma.travel_dislikes.findUnique({
     where: {
       id,
     },
   });
   if (curDislike.userID === req.token.username) {
-    const deletedDislike = await prisma.dislikes.delete({
+    const deletedDislike = await prisma.travel_dislikes.delete({
       where: {
         id,
       },
@@ -298,13 +298,13 @@ router.delete("/dislikes/:id", checkAuthMiddleWare, async (req, res) => {
 router
   .route("/comments")
   .get(async (req, res) => {
-    const comments = await prisma.comments.findMany();
+    const comments = await prisma.travel_comments.findMany();
     res.json(comments);
   })
   .post(checkAuthMiddleWare, async (req, res) => {
     const data = req.body;
     if (data.userID === req.token.username) {
-      const newComment = await prisma.comments.create({
+      const newComment = await prisma.travel_comments.create({
         data,
       });
       res.status(201).json({ message: "Comment created successfully!", newComment });
@@ -317,13 +317,13 @@ router
 
 router.delete("/comments/:id", checkAuthMiddleWare, async (req, res) => {
   const id = +req.params.id;
-  const curComment = await prisma.comments.findUnique({
+  const curComment = await prisma.travel_comments.findUnique({
     where: {
       id,
     },
   });
   if (curComment.userID === req.token.username) {
-    const deletedComment = await prisma.comments.delete({
+    const deletedComment = await prisma.travel_comments.delete({
       where: {
         id,
       },
@@ -339,13 +339,13 @@ router.delete("/comments/:id", checkAuthMiddleWare, async (req, res) => {
 router
   .route("/destination-pictures")
   .get(async (req, res) => {
-    const pictures = await prisma.destination_pictures.findMany();
+    const pictures = await prisma.travel_destination_pictures.findMany();
     res.json(pictures);
   })
   .post(checkAuthMiddleWare, async (req, res) => {
     const data = req.body;
     if (data.userID === req.token.username) {
-      const newPicture = await prisma.destination_pictures.create({
+      const newPicture = await prisma.travel_destination_pictures.create({
         data,
       });
       res.status(201).json({ message: "Picture added successfully!", newPicture });
@@ -358,13 +358,13 @@ router
 
 router.delete("/destination-pictures/:id", checkAuthMiddleWare, async (req, res) => {
   const id = +req.params.id;
-  const curPicture = await prisma.destination_pictures.findUnique({
+  const curPicture = await prisma.travel_destination_pictures.findUnique({
     where: {
       id,
     },
   });
   if (curPicture.userID === req.token.username) {
-    const deletedPicture = await prisma.destination_pictures.findUnique({
+    const deletedPicture = await prisma.travel_destination_pictures.findUnique({
       where: {
         id,
       },

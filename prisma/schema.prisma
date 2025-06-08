@@ -3,176 +3,241 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
-model destinations {
-  id                       Int                        @id(map: "destionations_pkey") @default(autoincrement())
-  name                     String
+model bazaar_items {
+  id           Int          @id(map: "items_pkey") @unique(map: "items_id_key") @default(autoincrement())
+  name         String
+  image        String
+  price        Int
+  type         String
+  description  String
+  seller       String
+  createdAt    DateTime?    @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  updatedAt    DateTime?    @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  quantity     Int?         @default(1)
+  bazaar_users bazaar_users @relation(fields: [seller], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "items_seller_fkey")
+}
+
+model bazaar_messages {
+  id                                                   Int          @id(map: "messages_pkey") @default(autoincrement())
+  createdAt                                            DateTime?    @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  sender                                               String
+  recipient                                            String
+  message                                              String
+  system                                               Boolean?     @default(false)
+  read                                                 Boolean?     @default(false)
+  frozen                                               Boolean?     @default(false)
+  bazaar_users_bazaar_messages_recipientTobazaar_users bazaar_users @relation("bazaar_messages_recipientTobazaar_users", fields: [recipient], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "messages_recipient_fkey")
+  bazaar_users_bazaar_messages_senderTobazaar_users    bazaar_users @relation("bazaar_messages_senderTobazaar_users", fields: [sender], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "messages_sender_fkey")
+}
+
+model bazaar_reviews {
+  id                                                  Int          @id(map: "reviews_pkey") @default(autoincrement())
+  sender                                              String
+  recipient                                           String
+  rating                                              Decimal      @db.Decimal
+  message                                             String
+  createdAt                                           DateTime?    @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  bazaar_users_bazaar_reviews_recipientTobazaar_users bazaar_users @relation("bazaar_reviews_recipientTobazaar_users", fields: [recipient], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "reviews_recipient_fkey")
+  bazaar_users_bazaar_reviews_senderTobazaar_users    bazaar_users @relation("bazaar_reviews_senderTobazaar_users", fields: [sender], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "reviews_sender_fkey")
+}
+
+model bazaar_transactions {
+  id        Int       @id(map: "transactions_pkey") @default(autoincrement())
+  createdAt DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  quantity  Int
+  total     Int
+  type      String
+  item      Int
+  buyer     String
+  seller    String
+  bought    Boolean?  @default(true)
+}
+
+model bazaar_users {
+  id                                                      Int               @id(map: "users_pkey") @unique(map: "users_id_key") @default(autoincrement())
+  firstName                                               String
+  lastName                                                String
+  username                                                String            @unique(map: "users_username_key")
+  password                                                String
+  admin                                                   Boolean           @default(false)
+  gender                                                  users_gender?     @default(M)
+  profilePicture                                          String
+  balance                                                 Int?              @default(100000)
+  bazaar_items                                            bazaar_items[]
+  bazaar_messages_bazaar_messages_recipientTobazaar_users bazaar_messages[] @relation("bazaar_messages_recipientTobazaar_users")
+  bazaar_messages_bazaar_messages_senderTobazaar_users    bazaar_messages[] @relation("bazaar_messages_senderTobazaar_users")
+  bazaar_reviews_bazaar_reviews_recipientTobazaar_users   bazaar_reviews[]  @relation("bazaar_reviews_recipientTobazaar_users")
+  bazaar_reviews_bazaar_reviews_senderTobazaar_users      bazaar_reviews[]  @relation("bazaar_reviews_senderTobazaar_users")
+}
+
+model travel_comments {
+  id                  Int                 @id(map: "comments_pkey") @default(autoincrement())
+  createdAt           DateTime?           @default(now()) @db.Timestamptz(6)
+  userID              String
+  postID              Int
+  message             String
+  travel_destinations travel_destinations @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "comments_postID_fkey")
+  travel_users        travel_users        @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "comments_userID_fkey")
+}
+
+model travel_destination_pictures {
+  id                  Int                 @id(map: "destination-pictures_pkey") @default(autoincrement())
+  name                String
+  userID              String
+  postID              String
+  travel_destinations travel_destinations @relation(fields: [postID], references: [picID], onDelete: Cascade, onUpdate: NoAction, map: "destination-pictures_postID_fkey")
+  travel_users        travel_users        @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "destination-pictures_userID_fkey")
+
+  @@map("travel_destination-pictures")
+}
+
+model travel_destination_reservations {
+  id                  Int                 @id(map: "destination-reservations_pkey") @default(autoincrement())
+  userID              String
+  postID              Int
+  people              Int
+  travel_destinations travel_destinations @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "destination-reservations_postID_fkey")
+  travel_users        travel_users        @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "destination-reservations_userID_fkey")
+
+  @@map("travel_destination-reservations")
+}
+
+model travel_destinations {
+  id                              Int                               @id(map: "destionations_pkey") @default(autoincrement())
+  name                            String
+  userID                          String
+  startDate                       DateTime                          @db.Timestamptz(6)
+  endDate                         DateTime                          @db.Timestamptz(6)
+  description                     String
+  createdAt                       DateTime?                         @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  freeSpots                       Int
+  latitude                        Decimal                           @db.Decimal
+  longitude                       Decimal                           @db.Decimal
+  image                           String
+  picID                           String?                           @unique(map: "destinations_picID_key")
+  travel_comments                 travel_comments[]
+  travel_destination_pictures     travel_destination_pictures[]
+  travel_destination_reservations travel_destination_reservations[]
+  travel_users                    travel_users                      @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "destinations_userID_fkey")
+  travel_dislikes                 travel_dislikes[]
+  travel_likes                    travel_likes[]
+  travel_notifications            travel_notifications[]
+}
+
+model travel_dislikes {
+  id                  Int                  @id(map: "dislikes_pkey") @default(autoincrement())
+  userID              String?
+  postID              Int?
+  travel_destinations travel_destinations? @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "dislikes_postID_fkey")
+  travel_users        travel_users?        @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "dislikes_userID_fkey")
+}
+
+model travel_likes {
+  id                  Int                  @id(map: "likes_pkey") @default(autoincrement())
+  userID              String?
+  postID              Int?
+  travel_destinations travel_destinations? @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "likes_postID_fkey")
+  travel_users        travel_users?        @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "likes_userID_fkey")
+}
+
+model travel_notifications {
+  id                                                        Int                  @id(map: "notifications_pkey") @default(autoincrement())
+  sender                                                    String
+  recipient                                                 String
+  destinationID                                             Int?
+  rentID                                                    Int?
+  message                                                   String
+  new                                                       Boolean?             @default(false)
+  travel_destinations                                       travel_destinations? @relation(fields: [destinationID], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "notifications_destinationID_fkey")
+  travel_users_travel_notifications_recipientTotravel_users travel_users         @relation("travel_notifications_recipientTotravel_users", fields: [recipient], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "notifications_recipient_fkey")
+  travel_rents                                              travel_rents?        @relation(fields: [rentID], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "notifications_rentID_fkey")
+  travel_users_travel_notifications_senderTotravel_users    travel_users         @relation("travel_notifications_senderTotravel_users", fields: [sender], references: [username], onDelete: NoAction, onUpdate: NoAction, map: "notifications_sender_fkey")
+}
+
+model travel_rent_pictures {
+  id           Int          @id(map: "rent-pictures_pkey") @default(autoincrement())
+  name         String
+  userID       String
+  postID       String
+  travel_rents travel_rents @relation(fields: [postID], references: [picID], onDelete: Cascade, onUpdate: NoAction, map: "rent-pictures_postID_fkey")
+  travel_users travel_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "rent-pictures_userID_fkey")
+
+  @@map("travel_rent-pictures")
+}
+
+model travel_rent_reservations {
+  id           Int          @id(map: "rent-reservations_pkey") @default(autoincrement())
+  userID       String
+  people       Int
+  startDate    DateTime     @db.Date
+  endDate      DateTime     @db.Date
+  postID       Int
+  travel_rents travel_rents @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "rent-reservations_postID_fkey")
+  travel_users travel_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "rent-reservations_userID_fkey")
+
+  @@map("travel_rent-reservations")
+}
+
+model travel_rent_reviews {
+  id           Int          @id(map: "rent-reviews_pkey") @default(autoincrement())
+  createdAt    DateTime?    @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  userID       String
+  postID       Int
+  rating       Decimal      @db.Decimal
+  message      String
+  travel_rents travel_rents @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "rent-reviews_postID_fkey")
+  travel_users travel_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "rent-reviews_userID_fkey")
+
+  @@map("travel_rent-reviews")
+}
+
+model travel_rents {
+  id                       Int                        @id(map: "rents_pkey") @default(autoincrement())
   userID                   String
-  startDate                DateTime                   @db.Timestamptz(6)
-  endDate                  DateTime                   @db.Timestamptz(6)
-  description              String
   createdAt                DateTime?                  @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
-  freeSpots                Int
+  name                     String
+  image                    String
+  people                   Int
+  description              String
   latitude                 Decimal                    @db.Decimal
   longitude                Decimal                    @db.Decimal
-  image                    String
-  picID                    String?                    @unique
-  comments                 comments[]
-  destination_pictures     destination_pictures[]
-  destination_reservations destination_reservations[]
-  traveling_users          traveling_users            @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
-  dislikes                 dislikes[]
-  likes                    likes[]
-  notifications            notifications[]
+  price                    Int?
+  picID                    String?                    @unique(map: "rents_picID_key")
+  travel_notifications     travel_notifications[]
+  travel_rent_pictures     travel_rent_pictures[]
+  travel_rent_reservations travel_rent_reservations[]
+  travel_rent_reviews      travel_rent_reviews[]
+  travel_users             travel_users               @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction, map: "rents_userID_fkey")
 }
 
-model traveling_users {
-  id                                                     Int                        @id @default(autoincrement())
-  firstName                                              String
-  lastName                                               String
-  username                                               String                     @unique
-  password                                               String
-  email                                                  String
-  phone                                                  String
-  gender                                                 users_gender?              @default(M)
-  profilePicture                                         String
-  admin                                                  Boolean?                   @default(false)
-  comments                                               comments[]
-  destination_pictures                                   destination_pictures[]
-  destination_reservations                               destination_reservations[]
-  destinations                                           destinations[]
-  dislikes                                               dislikes[]
-  likes                                                  likes[]
-  notifications_notifications_recipientTotraveling_users notifications[]            @relation("notifications_recipientTotraveling_users")
-  notifications_notifications_senderTotraveling_users    notifications[]            @relation("notifications_senderTotraveling_users")
-  rent_pictures                                          rent_pictures[]
-  rent_reservations                                      rent_reservations[]
-  rent_reviews                                           rent_reviews[]
-  rents                                                  rents[]
-
-  @@map("traveling-users")
-}
-
-model comments {
-  id              Int             @id @default(autoincrement())
-  createdAt       DateTime?       @default(now()) @db.Timestamptz(6)
-  userID          String
-  postID          Int
-  message         String
-  destinations    destinations    @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  traveling_users traveling_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model destination_reservations {
-  id              Int             @id @default(autoincrement())
-  userID          String
-  postID          Int
-  people          Int
-  destinations    destinations    @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  traveling_users traveling_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
-
-  @@map("destination-reservations")
-}
-
-model dislikes {
-  id              Int              @id @default(autoincrement())
-  userID          String?
-  postID          Int?
-  destinations    destinations?    @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  traveling_users traveling_users? @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model likes {
-  id              Int              @id @default(autoincrement())
-  userID          String?
-  postID          Int?
-  destinations    destinations?    @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  traveling_users traveling_users? @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model rent_reservations {
-  id              Int             @id @default(autoincrement())
-  userID          String
-  people          Int
-  startDate       DateTime        @db.Date
-  endDate         DateTime        @db.Date
-  postID          Int
-  rents           rents           @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  traveling_users traveling_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
-
-  @@map("rent-reservations")
-}
-
-model rent_reviews {
-  id              Int             @id @default(autoincrement())
-  createdAt       DateTime?       @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
-  userID          String
-  postID          Int
-  rating          Decimal         @db.Decimal
-  message         String
-  rents           rents           @relation(fields: [postID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  traveling_users traveling_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
-
-  @@map("rent-reviews")
-}
-
-model rents {
-  id                Int                 @id @default(autoincrement())
-  userID            String
-  createdAt         DateTime?           @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
-  name              String
-  image             String
-  people            Int
-  description       String
-  latitude          Decimal             @db.Decimal
-  longitude         Decimal             @db.Decimal
-  price             Int?
-  picID             String?             @unique
-  notifications     notifications[]
-  rent_pictures     rent_pictures[]
-  rent_reservations rent_reservations[]
-  rent_reviews      rent_reviews[]
-  traveling_users   traveling_users     @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model notifications {
-  id                                                       Int             @id @default(autoincrement())
-  sender                                                   String
-  recipient                                                String
-  destinationID                                            Int?
-  rentID                                                   Int?
-  message                                                  String
-  new                                                      Boolean?        @default(false)
-  destinations                                             destinations?   @relation(fields: [destinationID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  traveling_users_notifications_recipientTotraveling_users traveling_users @relation("notifications_recipientTotraveling_users", fields: [recipient], references: [username], onDelete: Cascade, onUpdate: NoAction)
-  rents                                                    rents?          @relation(fields: [rentID], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  traveling_users_notifications_senderTotraveling_users    traveling_users @relation("notifications_senderTotraveling_users", fields: [sender], references: [username], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model destination_pictures {
-  id              Int             @id @default(autoincrement())
-  name            String
-  userID          String
-  postID          String
-  destinations    destinations    @relation(fields: [postID], references: [picID], onDelete: Cascade, onUpdate: NoAction)
-  traveling_users traveling_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
-
-  @@map("destination-pictures")
-}
-
-model rent_pictures {
-  id              Int             @id @default(autoincrement())
-  name            String
-  userID          String
-  postID          String
-  rents           rents           @relation(fields: [postID], references: [picID], onDelete: Cascade, onUpdate: NoAction)
-  traveling_users traveling_users @relation(fields: [userID], references: [username], onDelete: Cascade, onUpdate: NoAction)
-
-  @@map("rent-pictures")
+model travel_users {
+  id                                                                Int                               @id(map: "traveling-users_pkey") @default(autoincrement())
+  firstName                                                         String
+  lastName                                                          String
+  username                                                          String                            @unique(map: "traveling-users_username_key")
+  password                                                          String
+  email                                                             String
+  phone                                                             String
+  gender                                                            users_gender?                     @default(M)
+  profilePicture                                                    String
+  admin                                                             Boolean?                          @default(false)
+  travel_comments                                                   travel_comments[]
+  travel_destination_pictures                                       travel_destination_pictures[]
+  travel_destination_reservations                                   travel_destination_reservations[]
+  travel_destinations                                               travel_destinations[]
+  travel_dislikes                                                   travel_dislikes[]
+  travel_likes                                                      travel_likes[]
+  travel_notifications_travel_notifications_recipientTotravel_users travel_notifications[]            @relation("travel_notifications_recipientTotravel_users")
+  travel_notifications_travel_notifications_senderTotravel_users    travel_notifications[]            @relation("travel_notifications_senderTotravel_users")
+  travel_rent_pictures                                              travel_rent_pictures[]
+  travel_rent_reservations                                          travel_rent_reservations[]
+  travel_rent_reviews                                               travel_rent_reviews[]
+  travel_rents                                                      travel_rents[]
 }
 
 enum users_gender {
